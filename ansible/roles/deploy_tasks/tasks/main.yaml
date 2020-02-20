@@ -1,10 +1,3 @@
-- name: install pkgs
-  apt:
-    update_cache: "{{ is_online | default('yes') }}"
-    name: bc
-  tags:
-    - test
-
 - name      : create users
   user      :
     name       : "{{ item.name }}"
@@ -21,7 +14,7 @@
 
 - name    : upload custom shell
   template:
-    src  : dockersh.j2
+    src  : dockersh
     dest : /usr/local/bin/dockersh
     owner: root
     group: root
@@ -51,14 +44,14 @@
 
 - name: create directory for scripts
   file:
-    path : /opt/susenescape
+    path : /opt/suzen_escape
     state: directory
     mode : 0755
 
 - name      : upload checker scripts
   template  :
-    src : "suzen{{ item }}.j2"
-    dest: "/opt/susenescape/suzen{{ item }}"
+    src : "suzen{{ item }}"
+    dest: "/opt/suzen_escape/suzen{{ item }}"
     mode: 0755
   with_items:
     - 19
@@ -78,23 +71,9 @@
     group: root
     mode : 0755
 
-- name    : check if rules file exists
-  stat    :
-    path: /var/tmp/addr
-  register: kostyl_stat
-
-- name      : create kostyl file
-  lineinfile:
-    path  : /var/tmp/addr
-    line  : '1'
-    create: yes
-    mode  : 0777
-    state : present
-  when      : kostyl_stat.stat.exists == false
-
 - name: upload docker config
   template:
-    src: daemon.json.j2
+    src: daemon.json
     dest: /etc/docker/daemon.json
     owner: root
     group: root

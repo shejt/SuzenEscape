@@ -6,40 +6,30 @@ try:
     import logging
     import yaml
 except ImportError:
-    print(
-        'Import error.',
-        'You need to install requirements.',
-        'pip3 install -r requirements.txt',
-        sep='\n',
-    )
+    print('Import error.\nYou need to install requirements.\npip3 install -r requirements.txt')
     exit(1)
+
 
 def build(level, registry_url, args):
     try:
-        image_tag = '{registry_url}/suzenescape/{level_name}'.format(
-        registry_url = registry_url, level_name = level['name']
-        )
+        image_tag = f'{registry_url}/suzenescape/{level["name"]}'
 
         _, build_log = client.images.build(
-            path='chains/chain{level_chain}/level{level_vl}'.format(
-                level_chain=level['chain'].zfill(2), level_vl=level['level']
-            ),
+            path=f'chains/chain{level["chain"].zfill(2)}/level{level["level"]}',
             tag=image_tag,
             buildargs={
                 'USERNAME': level['name'],
-                'CONFIG': level.get("config", "NONE"),
-                'USERHOME': "root" if level.get("rohome") else level["name"],
-                'FLAG': level.get("flag", "NONE"),
+                'CONFIG': level.get('config', 'NONE'),
+                'USERHOME': 'root' if level.get('rohome') else level['name'],
+                'FLAG': level.get('flag', 'NONE'),
             },
             rm=True,
             forcerm=True,
         )
 
         if args.verbose:
-            build_log_string = ''.join([item.get('stream', '') for item in build_log])[:-1]
-            logging.info(
-                '{image_tag} build log:\n{build_log}'.format(image_tag=image_tag, build_log=build_log_string)
-            )
+            build_log_string = ''.join((item.get('stream', '') for item in build_log))[:-1]
+            logging.info(f'{image_tag} build log:\n{build_log_string}')
 
         if not args.build_only:
             push(image_tag)
@@ -49,23 +39,18 @@ def build(level, registry_url, args):
         logging.error(exc)
         exit(1)
 
-    return
-
 
 def push(image):
     result = client.images.push(image)
     logging.info('push status:')
     logging.info(result[:-1])
-    return
 
 
 def argp():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        '-b', '--build_only', help='build only, not push images', action='store_true'
-    )
-    #parser.add_argument('-t', '--token', help='token, used as message to encrypt')
+    parser.add_argument('-b', '--build_only', help='build only, not push images', action='store_true')
+    # parser.add_argument('-t', '--token', help='token, used as message to encrypt')
     parser.add_argument('-v', '--verbose', help='log enable', action='count')
     # parser.add_argument('-f', '--vars-yaml', help='path to yaml level vars file')
     parser.add_argument('task', nargs='+', help='task to build list')
@@ -79,7 +64,7 @@ def query_add(qtask):
     try:
         servers = levels_map[qtask]['servers']
     except KeyError:
-        servers = []
+        servers = list()
         pass
     for server in servers:
         stask = server['name'][len('suzen') :]
@@ -114,18 +99,19 @@ if __name__ == '__main__':
 
     levels_map = {level['name'][len('suzen') :]: level for level in yml['levels']}
 
-    build_query = {}
+    build_query = dict()
 
     if args.task[0] == 'all':
         for task in levels_map.keys():
             query_add(task)
     else:
         for task in args.task:
-            if task in levels_map.keys():
-                query_add(task)
-            else:
-                logging.warning('{task} in not available: skipping'.format(task=task))
+            if task not in levels_map.keys():
+                logging.warning(f'{task} in not available: skipping')
+                continue
+
+            query_add(task)
 
     for level in build_query:
-        logging.info('build level {level}'.format(level=level))
+        logging.info(f'build level {level}')
         build(build_query[level], registry_url, args)
