@@ -76,6 +76,8 @@ def query_add(qtask):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
+    args = argp()
+
     client = docker.client.from_env()
     try:
         client.ping()
@@ -83,8 +85,6 @@ if __name__ == '__main__':
         logging.error('docker client not init')
         logging.error(exc)
         exit(1)
-
-    args = argp()
 
     logging.info('Start')
 
